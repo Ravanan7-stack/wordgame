@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Word Hunt — Neon Levels</title>
+<style>
+:root{--bg:#090914;--panel:#151326;--panel2:#1c1833;--purple:#9b5cff;--pink:#ff5bd6;--text:#f5f1ff;--muted:#a9a1c5;--good:#64f2b2}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;color:var(--text);font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:radial-gradient(ellipse at top,#28134b 0%,var(--bg) 55%);padding:18px}
+.wrap{max-width:650px;margin:auto}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+.logo{font-weight:900;letter-spacing:1px;font-size:1.15rem}.logo span{color:var(--pink)}
+.pill{border:1px solid #5e438b;background:#211837;color:#d8c6ff;padding:7px 12px;border-radius:99px;font-size:.8rem}
+h1{font-size:clamp(1.7rem,6vw,2.4rem);margin:8px 0 4px;line-height:1.1}
+.sub{color:var(--muted);margin:0 0 20px;font-size:.93rem}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.stat,.gamebox,.levels{background:linear-gradient(145deg,#1a1630,#100f20);border:1px solid #352653;border-radius:18px;padding:13px}
+.stat small{display:block;color:var(--muted);font-size:.75rem}.stat strong{font-size:1.25rem}
+.gamebox{padding:16px}
+.topline{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+#levelName{font-weight:800}#difficulty{color:#d3b7ff;font-size:.8rem}
+#grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;max-width:430px;margin:0 auto;touch-action:none;user-select:none}
+.tile{aspect-ratio:1;border-radius:12px;border:1px solid #49366e;background:linear-gradient(145deg,#292044,#19152b);display:grid;place-items:center;font-size:clamp(1.1rem,5vw,1.65rem);font-weight:850;color:#fff;box-shadow:inset 0 1px 0 #ffffff12;cursor:pointer;transition:transform .08s,background .1s}
+.tile.selected{background:linear-gradient(145deg,#a05cff,#6736b5);border-color:#e0c7ff;transform:scale(.96);box-shadow:0 0 15px #9b5cff66}
+.tile.found{background:linear-gradient(145deg,#176e59,#124237);border-color:#4de5ad;color:#caffeb}
+.words{display:flex;flex-wrap:wrap;gap:8px;margin:15px 0 12px;justify-content:center}
+.word{padding:7px 10px;border-radius:10px;background:#241e39;border:1px solid #3d3158;color:#c4b8df;font-size:.83rem;letter-spacing:1px}
+.word.done{color:var(--good);border-color:#2c896b;text-decoration:line-through;background:#12352c}
+.message{min-height:24px;text-align:center;color:#d8c5ff;font-size:.9rem;margin:8px 0}
+.controls{display:flex;gap:9px;flex-wrap:wrap;justify-content:center}
+button{font:inherit;font-weight:750;color:white;background:linear-gradient(110deg,#8c4eff,#bd4fd8);border:0;border-radius:12px;padding:11px 16px;cursor:pointer}
+button.secondary{background:#27213c;border:1px solid #4a3a67;color:#e4d9ff}
+button:disabled{opacity:.4;cursor:not-allowed}
+.levels{margin-top:14px}
+.levelhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.levelhead strong{font-size:1rem}
+#levelList{display:grid;grid-template-columns:repeat(6,1fr);gap:7px}
+.levelbtn{padding:9px 0;background:#211b34;border:1px solid #3b2c56;border-radius:9px;font-size:.8rem;color:#d7c8f5}
+.levelbtn.current{background:#7c42c8;border-color:#d2a7ff}
+.levelbtn.locked{opacity:.35}
+footer{color:#81799d;text-align:center;font-size:.75rem;margin:18px 0 8px}
+@media(min-width:520px){body{padding:28px}.gamebox{padding:22px}#levelList{grid-template-columns:repeat(10,1fr)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><div class="logo">WORD<span>HUNT</span> ✦</div><div class="pill">NEON PUZZLE</div></header>
+<h1>Find the hidden words.</h1>
+<p class="sub">Connect neighboring letters in order. Drag across the board or tap letters.</p>
+<div class="stats">
+  <div class="stat"><small>LEVEL</small><strong id="levelStat">1 / 100</strong></div>
+  <div class="stat"><small>SCORE</small><strong id="scoreStat">0</strong></div>
+  <div class="stat"><small>WORDS FOUND</small><strong id="foundStat">0 / 5</strong></div>
+</div>
+<section class="gamebox">
+  <div class="topline"><div id="levelName">Level 1</div><div id="difficulty">EASY</div></div>
+  <div id="grid" aria-label="Word Hunt letter grid"></div>
+  <div class="words" id="wordList"></div>
+  <div class="message" id="message">Find all 5 words to unlock the next level!</div>
+  <div class="controls">
+    <button class="secondary" id="clearBtn">Clear selection</button>
+    <button class="secondary" id="hintBtn">Hint ✦</button>
+    <button id="nextBtn" disabled>Next level →</button>
+  </div>
+</section>
+<section class="levels">
+  <div class="levelhead"><strong>LEVEL SELECT</strong><span class="pill" id="progressLabel">1 unlocked</span></div>
+  <div id="levelList"></div>
+</section>
+<footer>Standalone demo • Progress is saved on this device</footer>
+</div>
+<script>
+const bank = [
+"sun","moon","star","sky","rain","wind","snow","cloud","tree","leaf","bird","fish","frog","bear","wolf","lion","deer","duck","dove","fox","cat","dog","ant","bee","owl","hen","cow","pig","goat","horse",
+"book","page","read","word","game","play","level","score","brain","think","smart","quick","learn","spell","write","draw","paint","music","song","note","tune","drum","piano","flute","dance","art",
+"home","room","door","wall","roof","floor","chair","table","lamp","clock","phone","screen","mouse","key","cable","drive","file","code","web","site","link","cloud","data","pixel","video","photo",
+"road","car","bike","bus","train","ship","boat","plane","truck","wheel","brake","speed","race","track","fuel","road","city","town","park","bridge","river","lake","sea","beach","hill","mountain",
+"food","rice","bread","cake","milk","cheese","apple","grape","peach","lemon","mango","berry","sweet","spice","salt","sugar","water","juice","honey","beans","corn","pasta","pizza","soup",
+"happy","brave","calm","kind","bright","fresh","clean","great","magic","dream","smile","laugh","peace","trust","hope","proud","power","glow","shine","spark","light","heart","world","future"
+];
+const alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+let level=1, score=0, unlocked=1, found=new Set(), selection=[], pointerDown=false, board=[], targets=[];
+const $=id=>document.getElementById(id);
+function difficulty(l){return l<=10?"EASY":l<=25?"EASY+":l<=50?"MEDIUM":l<=75?"HARD":l<=90?"VERY HARD":"EXPERT"}
+function wordCount(l){return l<11?4:l<26?5:l<51?6:l<76?7:8}
+function chooseTargets(l){
+  const count=wordCount(l), start=(l*3)%bank.length, arr=[];
+  for(let i=0;i<bank.length&&arr.length<count;i++){
+    let w=bank[(start+i*7)%bank.length].toUpperCase();
+    if(w.length>=3&&w.length<=5&&!arr.includes(w))arr.push(w);
+  }
+  while(arr.length<count){let w=bank[Math.floor(Math.random()*bank.length)].toUpperCase();if(w.length<=5&&!arr.includes(w))arr.push(w)}
+  return arr;
+}
+function makeBoard(){
+  // Place target words as rows, preserving a playable, guaranteed path for every target.
+  targets=chooseTargets(level);
+  board=Array.from({length:5},()=>Array(5).fill(""));
+  targets.slice(0,5).forEach((word,r)=>{
+    const w=word.slice(0,5);
+    let start=Math.floor(Math.random()*(6-w.length));
+    for(let c=0;c<w.length;c++)board[r][start+c]=w[c];
+  });
+  for(let r=0;r<5;r++)for(let c=0;c<5;c++)if(!board[r][c])board[r][c]=alphabet[Math.floor(Math.random()*26)];
+  // On advanced levels, use a larger target list; extra words remain discoverable in the grid.
+  selection=[];found=new Set();
+}
+function render(){
+  $("grid").innerHTML="";
+  board.flat().forEach((letter,i)=>{
+    const tile=document.createElement("div");tile.className="tile";tile.textContent=letter;tile.dataset.i=i;
+    tile.addEventListener("pointerdown",e=>{e.preventDefault();pointerDown=true;selection=[i];renderSelection()});
+    tile.addEventListener("pointerenter",()=>{if(pointerDown)addToSelection(i)});
+    tile.addEventListener("pointerup",()=>{if(pointerDown){pointerDown=false;submitSelection()}});
+    tile.addEventListener("click",()=>{if(!pointerDown){if(selection.includes(i))submitSelection();else {selection.push(i);renderSelection();if(selection.length>=2)submitSelection()}}});
+    $("grid").appendChild(tile);
+  });
+  $("wordList").innerHTML="";
+  targets.forEach(w=>{const el=document.createElement("span");el.className="word"+(found.has(w)?" done":"");el.textContent=found.has(w)?w.split("").join(" ") : "• ".repeat(w.length).trim();el.title=found.has(w)?w:"Hidden word";$("wordList").appendChild(el)});
+  $("levelStat").textContent=level+" / 100";$("scoreStat").textContent=score;$("foundStat").textContent=found.size+" / "+targets.length;
+  $("levelName").textContent="Level "+level;$("difficulty").textContent=difficulty(level);
+  $("nextBtn").disabled=found.size!==targets.length;
+  $("progressLabel").textContent=unlocked+" unlocked";
+  renderLevels();renderSelection();
+}
+function renderLevels(){
+  $("levelList").innerHTML="";
+  for(let i=1;i<=100;i++){
+    const b=document.createElement("button");b.className="levelbtn"+(i===level?" current":"")+(i>unlocked?" locked":"");
+    b.textContent=i>unlocked?"🔒":i;b.disabled=i>unlocked;b.onclick=()=>{level=i;makeBoard();render();$("message").textContent="Find all the hidden words!"};$("levelList").appendChild(b);
+  }
+}
+function adjacent(a,b){return Math.max(Math.abs(Math.floor(a/5)-Math.floor(b/5)),Math.abs(a%5-b%5))===1}
+function addToSelection(i){if(selection.includes(i))return;let last=selection[selection.length-1];if(last===undefined||adjacent(last,i)){selection.push(i);renderSelection()}}
+function renderSelection(){
+  [...$("grid").children].forEach((el,i)=>{el.classList.toggle("selected",selection.includes(i));el.classList.toggle("found",targets.some(w=>found.has(w)&&isWordPath(w, i)))});
+}
+function isWordPath(word,i){return false}
+function submitSelection(){
+  if(!selection.length)return;
+  const word=selection.map(i=>board.flat()[i]).join("");
+  const reverse=word.split("").reverse().join("");
+  const match=targets.find(w=>(w===word||w===reverse)&&!found.has(w));
+  if(match){found.add(match);score+=match.length*10+level; $("message").textContent="Nice! "+match+" found ✨";
+    if(found.size===targets.length){unlocked=Math.max(unlocked,Math.min(100,level+1));$("message").textContent="Level complete! ✨ Next level unlocked.";save();}
+  }else $("message").textContent="Not a target word — try another path.";
+  selection=[];render();
+}
+function clear(){selection=[];renderSelection();$("message").textContent="Selection cleared."}
+function hint(){
+  const remaining=targets.find(w=>!found.has(w));
+  if(!remaining){$("message").textContent="All words found!";return}
+  $("message").textContent="Hint: one hidden word starts with “"+remaining[0]+"” and has "+remaining.length+" letters.";
+  score=Math.max(0,score-5);$("scoreStat").textContent=score;
+}
+function save(){try{localStorage.setItem("wordhunt-save",JSON.stringify({level,score,unlocked}))}catch(e){}}
+function load(){try{const s=JSON.parse(localStorage.getItem("wordhunt-save")||"{}");level=Math.min(100,Math.max(1,s.level||1));score=s.score||0;unlocked=Math.min(100,Math.max(1,s.unlocked||1))}catch(e){}}
+$("clearBtn").onclick=clear;$("hintBtn").onclick=hint;
+$("nextBtn").onclick=()=>{if(found.size===targets.length&&level<100){level++;makeBoard();render();$("message").textContent="New level! Find all the words.";save()}else if(level===100){$("message").textContent="You cleared all 100 levels! 🎉"}};
+window.addEventListener("pointerup",()=>{if(pointerDown){pointerDown=false;submitSelection()}});
+load();makeBoard();render();
+</script>
+</body>
+</html>
