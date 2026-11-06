@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101024">
+<title>Word Hunt • Play</title>
+<style>
+:root{--bg:#0b0b18;--card:#17172b;--card2:#20203a;--line:#343454;--ink:#f7f5ff;--muted:#a9a8c7;--violet:#9a68ff;--pink:#ff71d2;--mint:#62efbd;--gold:#ffd978}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -15%,#453078 0,#17142e 36%,var(--bg) 74%);color:var(--ink);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh;padding:env(safe-area-inset-top) 15px env(safe-area-inset-bottom)}
+button{font:inherit;cursor:pointer;color:inherit;border:0}button:focus-visible{outline:2px solid #fff;outline-offset:3px}
+.app{max-width:620px;margin:0 auto;padding:16px 0 28px}
+nav{display:flex;align-items:center;justify-content:space-between;margin:4px 2px 20px}
+.brand{font-weight:950;letter-spacing:.8px;font-size:1.1rem}.brand .spark{color:var(--pink)}.avatar{width:39px;height:39px;border-radius:14px;background:linear-gradient(145deg,#8f55ed,#e25dc6);display:grid;place-items:center;font-weight:900;box-shadow:0 5px 20px #a65aff40}
+.hero{margin:0 2px 17px}.eyebrow{color:#d4baff;font-size:.75rem;letter-spacing:2px;font-weight:800;text-transform:uppercase}.hero h1{font-size:clamp(1.8rem,7vw,2.5rem);line-height:1.04;margin:8px 0 8px;letter-spacing:-1px}.hero h1 span{background:linear-gradient(90deg,#b99aff,#ff9bdd);-webkit-background-clip:text;background-clip:text;color:transparent}.hero p{color:var(--muted);margin:0;font-size:.9rem}
+.progressrow{display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:9px;margin-bottom:13px}
+.stat{background:#17162bdc;border:1px solid #3b345c;border-radius:17px;padding:12px 13px;box-shadow:0 8px 24px #0002}.stat .label{display:block;color:var(--muted);font-size:.68rem;font-weight:750;letter-spacing:1px}.stat strong{display:block;font-size:1.23rem;margin-top:2px}.stat:first-child strong{color:#d8c1ff}
+.panel{background:linear-gradient(155deg,#1c1a33f5,#121222f5);border:1px solid #3b3458;border-radius:25px;padding:16px;box-shadow:0 16px 45px #0003}
+.gamehead{display:flex;align-items:center;justify-content:space-between;margin:0 1px 14px}.leveltitle{font-weight:850;font-size:1.05rem}.tag{font-size:.7rem;letter-spacing:.7px;font-weight:850;color:#e2cfff;background:#35244f;border:1px solid #65469a;border-radius:999px;padding:6px 10px}
+#board{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px;touch-action:none;user-select:none;-webkit-user-select:none}
+.cell{aspect-ratio:1;display:grid;place-items:center;border-radius:12px;background:linear-gradient(145deg,#292744,#1d1b34);border:1px solid #47416b;font-weight:900;font-size:clamp(1rem,5.1vw,1.55rem);box-shadow:inset 0 1px #ffffff0c;touch-action:none;user-select:none;-webkit-user-select:none}
+.cell.selected{background:linear-gradient(145deg,#a66aff,#7144d0);border-color:#e5d2ff;box-shadow:0 0 17px #9c68ff66;transform:scale(.97)}
+.wordarea{margin:16px 0 10px}.wordlabel{display:flex;justify-content:space-between;color:var(--muted);font-size:.75rem;font-weight:750;margin-bottom:9px}.wordlist{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.wordchip{min-width:57px;text-align:center;padding:8px 11px;border-radius:11px;background:#24223d;border:1px solid #3d395d;color:#d5cce9;font-size:.8rem;font-weight:800;letter-spacing:1px}
+.wordchip.done{color:var(--mint);background:#14372f;border-color:#327d67}
+.notice{min-height:26px;text-align:center;color:#d9caff;font-size:.86rem;margin:10px 0 13px}
+.actions{display:flex;justify-content:center;flex-wrap:wrap;gap:9px}.btn{border-radius:14px;padding:11px 15px;font-size:.87rem;font-weight:800;background:linear-gradient(110deg,#8d56f0,#bd59db);box-shadow:0 6px 17px #8f4bea30}.btn.secondary{background:#292640;border:1px solid #494365;box-shadow:none;color:#e9e2ff}.btn:disabled{opacity:.35;box-shadow:none;cursor:default}
+.levelpanel{margin-top:15px;padding:15px}.leveltop{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.leveltop h2{font-size:1rem;margin:0;letter-spacing:.5px}.levelcount{border:1px solid #5d4b88;background:#28213e;border-radius:99px;padding:6px 11px;color:#ddcaff;font-size:.82rem;font-weight:800}
+.levelgrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}.levelbtn{position:relative;min-height:43px;border-radius:12px;background:#24223b;border:1px solid #3d395a;color:#d8d1ef;font-size:.85rem;font-weight:850}.levelbtn.current{background:linear-gradient(135deg,#9454ed,#7441c3);border-color:#d8b8ff;box-shadow:0 0 12px #9a68ff3d}.levelbtn.completed{background:#15372f;border-color:#3a9277;color:var(--mint)}.levelbtn:disabled{opacity:.35}
+.levelbtn .check{font-size:1.1rem}
+.smallprint{text-align:center;color:#777697;font-size:.72rem;margin:18px 0 0}
+@media(min-width:480px){body{padding-left:22px;padding-right:22px}.panel{padding:20px}.levelgrid{grid-template-columns:repeat(10,minmax(0,1fr))}}
+@media(max-width:360px){.progressrow{gap:6px}.stat{padding:10px}.stat strong{font-size:1.08rem}.panel{padding:12px}#board{gap:5px}.cell{border-radius:9px}}
+</style>
+</head>
+<body><main class="app">
+<nav><div class="brand">WORD<span class="spark">HUNT</span> ✦</div><div class="avatar">W</div></nav>
+<section class="hero"><div class="eyebrow">A little brain adventure</div><h1>Find words.<br><span>Feel the glow.</span></h1><p>Slide through neighboring letters to uncover every hidden word.</p></section>
+<div class="progressrow">
+ <div class="stat"><span class="label">CURRENT LEVEL</span><strong id="currentLevel">1</strong></div>
+ <div class="stat"><span class="label">COMPLETED</span><strong id="completedCount">0 / 250</strong></div>
+ <div class="stat"><span class="label">TOTAL SCORE</span><strong id="score">0</strong></div>
+</div>
+<section class="panel">
+ <div class="gamehead"><div class="leveltitle" id="levelTitle">Level 1</div><div class="tag" id="difficulty">STARTER</div></div>
+ <div id="board" aria-label="Word hunt letter board"></div>
+ <div class="wordarea"><div class="wordlabel"><span>HIDDEN WORDS</span><span id="foundLabel">0 found</span></div><div class="wordlist" id="wordList"></div></div>
+ <div class="notice" id="notice">Find every word to unlock the next level!</div>
+ <div class="actions"><button class="btn secondary" id="clear">Clear path</button><button class="btn secondary" id="hint">Hint ✦</button><button class="btn" id="next" disabled>Continue →</button></div>
+</section>
+<section class="panel levelpanel"><div class="leveltop"><h2>LEVEL JOURNEY</h2><div class="levelcount" id="levelCount">Level 1</div></div><div class="levelgrid" id="levelGrid"></div></section>
+<p class="smallprint">Your progress saves in this browser on this device.</p>
+</main>
+<script>
+const WORDS=("SUN MOON STAR SKY RAIN WIND SNOW TREE LEAF BIRD FISH FROG BEAR WOLF LION DEER DUCK DOVE FOX CAT DOG ANT BEE OWL HEN COW PIG GOAT BOOK PAGE READ WORD GAME PLAY LEVEL SCORE BRAIN THINK SMART QUICK LEARN SPELL WRITE DRAW MUSIC SONG NOTE TUNE HOME ROOM DOOR WALL ROOF FLOOR CHAIR TABLE LAMP CLOCK PHONE SCREEN MOUSE KEY CODE WEB SITE LINK DATA PIXEL ROAD CAR BIKE BUS TRAIN SHIP BOAT PLANE TRUCK WHEEL RACE TRACK CITY PARK BRIDGE RIVER LAKE SEA BEACH HILL FOOD RICE BREAD CAKE MILK CHEESE APPLE GRAPE PEACH LEMON MANGO BERRY SWEET SALT SUGAR WATER JUICE HONEY HAPPY BRAVE CALM KIND BRIGHT FRESH CLEAN MAGIC DREAM SMILE LAUGH PEACE TRUST HOPE PROUD POWER GLOW SHINE SPARK LIGHT HEART WORLD FUTURE PLANET ROCKET COMET GALAXY ORBIT SPACE ENERGY NATURE FOREST FLOWER GARDEN ANIMAL TURTLE MONKEY TIGER ZEBRA PANDA EAGLE SNAKE HORSE SHEEP CAMEL DONKEY PUPPY KITTY").split(" ");
+const N=250, SIZE=6, $=id=>document.getElementById(id);
+let current=1,score=0,completed=new Set(),path=[],targetWords=[],cells=[],pointerActive=false,last=-1;
+function difficulty(l){if(l<=10)return"STARTER";if(l<=30)return"CASUAL";if(l<=60)return"PUZZLE";if(l<=100)return"CHALLENGE";if(l<=160)return"ADVANCED";if(l<=210)return"EXPERT";return"MASTER"}
+function wordCount(l){return l<=10?4:l<=50?5:6}
+function getWords(l){
+ let picked=[],offset=(l*13)%WORDS.length,limit=wordCount(l);
+ for(let i=0;i<WORDS.length&&picked.length<limit;i++){let w=WORDS[(offset+i*17)%WORDS.length];if(w.length>=3&&w.length<=SIZE&&!picked.includes(w))picked.push(w)}
+ return picked;
+}
+function makePuzzle(){
+ targetWords=getWords(current);cells=Array(SIZE*SIZE).fill("");
+ // Targets are placed in rows as contiguous letter paths; filler letters make the board feel mixed.
+ targetWords.forEach((w,r)=>{let start=(current*7+r*3)%(SIZE-w.length+1);for(let c=0;c<w.length;c++)cells[r*SIZE+start+c]=w[c]});
+ let alpha="ABCDEFGHIJKLMNOPQRSTUVWXYZ";for(let i=0;i<cells.length;i++)if(!cells[i])cells[i]=alpha[(current*19+i*11+Math.floor(Math.random()*26))%26];
+ path=[];
+}
+function render(){
+ let board=$("board");board.innerHTML="";
+ cells.forEach((letter,i)=>{let el=document.createElement("div");el.className="cell";el.textContent=letter;el.dataset.i=i;board.appendChild(el)});
+ $("wordList").innerHTML="";
+ targetWords.forEach(w=>{let el=document.createElement("div");el.className="wordchip"+(completed.has(current+":"+w)?" done":"");el.textContent=completed.has(current+":"+w)?w:"• ".repeat(w.length).trim();$("wordList").appendChild(el)});
+ let done=targetWords.filter(w=>completed.has(current+":"+w)).length;
+ $("currentLevel").textContent=current;$("completedCount").textContent=[...completed].filter(x=>x.startsWith("level:")).length+" / "+N;$("score").textContent=score;$("levelTitle").textContent="Level "+current;$("difficulty").textContent=difficulty(current);$("foundLabel").textContent=done+" found";$("next").disabled=done!==targetWords.length;
+ $("levelCount").textContent=current===1?"Level 1":String(current);renderLevels();paint();
+}
+function renderLevels(){
+ let list=$("levelGrid");list.innerHTML="";
+ for(let i=1;i<=N;i++){let b=document.createElement("button");let done=completed.has("level:"+i);b.className="levelbtn"+(i===current?" current":"")+(done?" completed":"");b.disabled=i>current||done;b.innerHTML=done?'<span class="check">✓</span>':i;b.title=done?"Completed":i>current?"Locked":"Play level "+i;b.onclick=()=>{current=i;makePuzzle();render();$("notice").textContent="Find every hidden word!"};list.appendChild(b)}
+}
+function neighbors(a,b){return Math.max(Math.abs(Math.floor(a/SIZE)-Math.floor(b/SIZE)),Math.abs(a%SIZE-b%SIZE))===1}
+function paint(){[...$("board").children].forEach((el,i)=>el.classList.toggle("selected",path.includes(i)))}
+function add(i){if(i===last||path.includes(i))return;if(!path.length||neighbors(path[path.length-1],i)){path.push(i);last=i;paint()}}
+function down(e){let tile=e.target.closest(".cell");if(!tile)return;e.preventDefault();pointerActive=true;path=[+tile.dataset.i];last=path[0];try{$("board").setPointerCapture(e.pointerId)}catch(_){}paint()}
+function move(e){if(!pointerActive)return;e.preventDefault();let el=document.elementFromPoint(e.clientX,e.clientY),tile=el&&el.closest(".cell");if(tile&&$("board").contains(tile))add(+tile.dataset.i)}
+function up(e){if(!pointerActive)return;pointerActive=false;try{$("board").releasePointerCapture(e.pointerId)}catch(_){}submit();last=-1}
+function submit(){
+ if(!path.length)return;let str=path.map(i=>cells[i]).join(""),rev=str.split("").reverse().join("");
+ let match=targetWords.find(w=>(w===str||w===rev)&&!completed.has(current+":"+w));
+ if(match){completed.add(current+":"+match);score+=match.length*10+current;
+ let done=targetWords.every(w=>completed.has(current+":"+w));
+ if(done){completed.add("level:"+current);$("notice").textContent="Level complete! ✨";save();}else $("notice").textContent="Nice find — "+match+"!";
+ }else $("notice").textContent="Not one of the hidden words. Try another path.";
+ path=[];render();
+}
+function clearPath(){path=[];last=-1;paint();$("notice").textContent="Path cleared."}
+function hint(){let w=targetWords.find(w=>!completed.has(current+":"+w));if(!w){$("notice").textContent="All words found!";return}$("notice").textContent="Hint: look for a "+w.length+"-letter word starting with "+w[0]+".";score=Math.max(0,score-5);$("score").textContent=score;save()}
+function save(){try{localStorage.setItem("wordhunt-premium-save",JSON.stringify({current,score,completed:[...completed]}))}catch(e){}}
+function load(){try{let s=JSON.parse(localStorage.getItem("wordhunt-premium-save")||"{}");current=Math.max(1,Math.min(N,s.current||1));score=s.score||0;completed=new Set(s.completed||[])}catch(e){}}
+$("board").addEventListener("pointerdown",down);$("board").addEventListener("pointermove",move);$("board").addEventListener("pointerup",up);$("board").addEventListener("pointercancel",up);
+$("clear").onclick=clearPath;$("hint").onclick=hint;$("next").onclick=()=>{if(targetWords.every(w=>completed.has(current+":"+w))&&current<N){current++;makePuzzle();render();$("notice").textContent="New level unlocked. Let's go!";save()}else if(current===N)$("notice").textContent="Amazing — all 250 levels completed!"};
+load();makePuzzle();render();
+</script></body></html>
