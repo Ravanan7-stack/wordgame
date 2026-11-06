@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WORD HUNT</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(180deg, #11052c 0%, #0d001a 100%);
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 10px;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      padding: 20px 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    h1.logo {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      background: linear-gradient(90deg, #ffffff 0%, #38bdf8 50%, #f472b6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .stats-bar {
+      display: flex;
+      width: 100%;
+      gap: 8px;
+    }
+
+    .stat-box {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 8px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .stat-value {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .board-wrapper {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 10px;
+      border-radius: 18px;
+      touch-action: none;
+      width: 100%;
+    }
+
+    .grid {
+      display: grid;
+      gap: 4px;
+      width: 100%;
+      aspect-ratio: 1;
+    }
+
+    .cell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 800;
+      color: #e2e8f0;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .cell.selected {
+      background: #00d2ff;
+      color: #ffffff;
+      box-shadow: 0 0 10px #00d2ff;
+    }
+
+    .cell.found {
+      background: #22c55e;
+      color: #ffffff;
+    }
+
+    .cell.hint-pulse {
+      animation: pulse 1s infinite alternate;
+    }
+
+    @keyframes pulse {
+      0% { background: #f59e0b; transform: scale(1); }
+      100% { background: #fbbf24; transform: scale(1.1); box-shadow: 0 0 12px #fbbf24; }
+    }
+
+    .words-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .word-badge {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 16px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #cbd5e1;
+    }
+
+    .word-badge.found {
+      background: rgba(56, 189, 248, 0.2);
+      border-color: #38bdf8;
+      color: #38bdf8;
+      text-decoration: line-through;
+      opacity: 0.5;
+    }
+
+    .controls {
+      display: flex;
+      width: 100%;
+      gap: 8px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 16px;
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+    }
+
+    .modal-content {
+      background: #1e1035;
+      padding: 24px;
+      border-radius: 16px;
+      text-align: center;
+      border: 1px solid #38bdf8;
+    }
+
+    .modal-content h2 { margin-bottom: 12px; color: #38bdf8; }
+    .modal-content button {
+      margin-top: 16px;
+      padding: 10px 20px;
+      background: #38bdf8;
+      color: #000;
+      border: none;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <h1 class="logo">WORD HUNT</h1>
+
+    <div class="stats-bar">
+      <div class="stat-box"><div class="stat-label">Level</div><div class="stat-value" id="lvl">1</div></div>
+      <div class="stat-box"><div class="stat-label">Score</div><div class="stat-value" id="score">0</div></div>
+      <div class="stat-box"><div class="stat-label">Found</div><div class="stat-value" id="found">0/4</div></div>
+    </div>
+
+    <div class="board-wrapper">
+      <div class="grid" id="grid"></div>
+    </div>
+
+    <div class="words-container" id="words"></div>
+
+    <div class="controls">
+      <button class="btn" id="hint-btn">💡 Hint (<span id="hints">3</span>)</button>
+      <button class="btn" id="restart-btn">↺ Restart</button>
+    </div>
+  </div>
+
+  <div class="modal" id="modal">
+    <div class="modal-content">
+      <h2>Level Cleared! 🎉</h2>
+      <p>Great job finding all words!</p>
+      <button id="next-btn">Next Level ➔</button>
+    </div>
+  </div>
+
+  <script>
+    const LEVELS = [
+      {
+        level: 1, size: 6,
+        words: ["CODE", "GAME", "HUNT", "GRID"],
+        grid: [
+          ['C','O','D','E','A','B'],
+          ['G','A','M','E','C','D'],
+          ['H','U','N','T','E','F'],
+          ['G','R','I','D','G','H'],
+          ['I','J','K','L','M','N'],
+          ['O','P','Q','R','S','T']
+        ]
+      },
+      {
+        level: 2, size: 8,
+        words: ["SPAWN", "BASS", "VENUS", "EARTH", "CAKE", "MATH"],
+        grid: [
+          ['S','T','A','M','A','T','H','V'],
+          ['P','A','A','E','S','P','A','W'],
+          ['A','C','E','A','U','A','G','N'],
+          ['W','A','B','R','A','U','A','E'],
+          ['G','K','S','T','N','B','H','A'],
+          ['P','E','R','E','B','A','S','S'],
+          ['V','E','N','U','S','S','A','T'],
+          ['B','E','A','R','T','H','E','T']
+        ]
+      }
+    ];
+
+    let currentLvl = 0;
+    let score = 0;
+    let hints = 3;
+    let foundWords = new Set();
+    let isSelecting = false;
+    let selectedCells = [];
+
+    const gridEl = document.getElementById("grid");
+    const wordsEl = document.getElementById("words");
+
+    function loadLevel(idx) {
+      currentLvl = idx;
+      const lvlData = LEVELS[idx];
+      foundWords.clear();
+      selectedCells = [];
+      document.getElementById("modal").style.display = "none";
+      document.getElementById("lvl").textContent = lvlData.level;
+      updateStats();
+
+      wordsEl.innerHTML = "";
+      lvlData.words.forEach(w => {
+        const b = document.createElement("div");
+        b.className = "word-badge";
+        b.textContent = w;
+        b.id = `b-${w}`;
+        wordsEl.appendChild(b);
+      });
+
+      gridEl.innerHTML = "";
+      gridEl.style.gridTemplateColumns = `repeat(${lvlData.size}, 1fr)`;
+
+      for (let r = 0; r < lvlData.size; r++) {
+        for (let c = 0; c < lvlData.size; c++) {
+          const d = document.createElement("div");
+          d.className = "cell";
+          d.textContent = lvlData.grid[r][c];
+          d.dataset.r = r;
+          d.dataset.c = c;
+          gridEl.appendChild(d);
+        }
+      }
+    }
+
+    function updateStats() {
+      const data = LEVELS[currentLvl];
+      document.getElementById("score").textContent = score;
+      document.getElementById("found").textContent = `${foundWords.size}/${data.words.length}`;
+      document.getElementById("hints").textContent = hints;
+    }
+
+    function getCell(x, y) {
+      const el = document.elementFromPoint(x, y);
+      return (el && el.classList.contains("cell")) ? el : null;
+    }
+
+    function start(cell) {
+      if (!cell) return;
+      isSelecting = true;
+      selectedCells = [cell];
+      cell.classList.add("selected");
+    }
+
+    function move(cell) {
+      if (!isSelecting || !cell) return;
+      const first = selectedCells[0];
+      const r0 = parseInt(first.dataset.r), c0 = parseInt(first.dataset.c);
+      const r1 = parseInt(cell.dataset.r), c1 = parseInt(cell.dataset.c);
+      const dr = r1 - r0, dc = c1 - c0;
+
+      if (dr === 0 || dc === 0 || Math.abs(dr) === Math.abs(dc)) {
+        const sr = dr === 0 ? 0 : dr / Math.abs(dr);
+        const sc = dc === 0 ? 0 : dc / Math.abs(dc);
+        document.querySelectorAll(".cell.selected").forEach(c => c.classList.remove("selected"));
+        selectedCells = [];
+
+        let r = r0, c = c0;
+        while (true) {
+          const target = document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
+          if (target) {
+            selectedCells.push(target);
+            target.classList.add("selected");
+          }
+          if (r === r1 && c === c1) break;
+          r += sr; c += sc;
+        }
+      }
+    }
+
+    function end() {
+      if (!isSelecting) return;
+      isSelecting = false;
+      const word = selectedCells.map(c => c.textContent).join("");
+      const data = LEVELS[currentLvl];
+
+      if (data.words.includes(word) && !foundWords.has(word)) {
+        foundWords.add(word);
+        score += word.length * 50;
+        selectedCells.forEach(c => {
+          c.classList.remove("selected");
+          c.classList.add("found");
+        });
+        const badge = document.getElementById(`b-${word}`);
+        if (badge) badge.classList.add("found");
+        updateStats();
+
+        if (foundWords.size === data.words.length) {
+          setTimeout(() => { document.getElementById("modal").style.display = "flex"; }, 500);
+        }
+      } else {
+        selectedCells.forEach(c => c.classList.remove("selected"));
+      }
+      selectedCells = [];
+    }
+
+    gridEl.addEventListener("mousedown", e => start(e.target));
+    gridEl.addEventListener("mousemove", e => move(getCell(e.clientX, e.clientY)));
+    window.addEventListener("mouseup", end);
+
+    gridEl.addEventListener("touchstart", e => start(getCell(e.touches[0].clientX, e.touches[0].clientY)));
+    gridEl.addEventListener("touchmove", e => move(getCell(e.touches[0].clientX, e.touches[0].clientY)));
+    window.addEventListener("touchend", end);
+
+    document.getElementById("restart-btn").addEventListener("click", () => loadLevel(currentLvl));
+    document.getElementById("next-btn").addEventListener("click", () => {
+      loadLevel((currentLvl + 1) % LEVELS.length);
+    });
+
+    document.getElementById("hint-btn").addEventListener("click", () => {
+      if (hints <= 0) return;
+      const data = LEVELS[currentLvl];
+      const remaining = data.words.filter(w => !foundWords.has(w));
+      if (remaining.length > 0) {
+        hints--;
+        const targetWord = remaining[0];
+        const firstChar = targetWord[0];
+        const cells = Array.from(document.querySelectorAll(".cell")).filter(c => c.textContent === firstChar && !c.classList.contains("found"));
+        if (cells.length > 0) {
+          cells[0].classList.add("hint-pulse");
+          setTimeout(() => cells[0].classList.remove("hint-pulse"), 2500);
+        }
+        updateStats();
+      }
+    });
+
+    loadLevel(0);
+  </script>
+</body>
+</html>
